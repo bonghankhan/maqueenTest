@@ -52,12 +52,6 @@ namespace maqueen {
         All = 2
     }
 
-    export enum Servos {
-        //% blockId="S1" block="S1"
-        S1 = 0,
-        //% blockId="S2" block="S2"
-        S2 = 1
-    }
 
     export enum Dir {
         //% blockId="CW" block="Forward"
@@ -86,67 +80,15 @@ namespace maqueen {
         Low = 0x00
     }
 
-    export enum LED {
-        //% blockId="LEDLeft" block="left"
-        LEDLeft = 8,
-        //% blockId="LEDRight" block="right"
-        LEDRight = 12
-    }
 
-    export enum LEDswitch {
-        //% blockId="turnOn" block="ON"
-        turnOn = 0x01,
-        //% blockId="turnOff" block="OFF"
-        turnOff = 0x00
-    }
-
-    //% advanced=true shim=maqueenIR::initIR
-    function initIR(pin: Pins): void {
-        return
-    }
-
-    //% advanced=true shim=maqueenIR::onPressEvent
-    function onPressEvent(btn: RemoteButton, body: Action): void {
-        return
-    }
-
-    //% advanced=true shim=maqueenIR::getParam
-    function getParam(): number {
-        return 0
-    }
 
     function maqueenInit(): void {
         if (alreadyInit == 1) {
             return
         }
-        initIR(Pins.P16)
         alreadyInit = 1
     }
 
-    //% weight=2
-    //% blockGap=50
-    //% blockId=IR_callbackUser block="on IR received"
-    export function IR_callbackUser(maqueencb: (message: number) => void) {
-        maqueenInit();
-        IR_callback(() => {
-            const packet = new Packeta();
-            packet.mye = maqueene;
-            maqueenparam = getParam();
-            packet.myparam = maqueenparam;
-            maqueencb(packet.myparam);
-        });
-    }
-
-    /**
-     * Read IR sensor value.
-     */
-
-    //% weight=10
-    //% blockId=IR_read block="read IR key value"
-    export function IR_read(): number {
-        maqueenInit()
-        return getParam()
-    }
 
     let irstate:number;
     let state:number;
@@ -154,133 +96,7 @@ namespace maqueen {
      /**
      * Read IR sensor value V2.
      */
-
-    //% advanced=true shim=maqueenIRV2::irCode
-    function irCode(): number {
-        return 0;
-    }
     
-    //% weight=5
-    //% group="micro:bit(v2)"
-    //% blockId=IR_readv2 block="read IR key value"
-    export function IR_readV2(): number {
-        pins.setPull(DigitalPin.P16, PinPullMode.PullUp)
-        return valuotokeyConversion();
-    }
-
-    //% weight=2
-    //% group="micro:bit(v2)"
-    //% blockId=IR_callbackUserv2 block="on IR received"
-    //% draggableParameters
-    export function IR_callbackUserV2(cb: (message: number) => void) {
-        pins.setPull(DigitalPin.P16, PinPullMode.PullUp)
-        state = 1;
-        control.onEvent(11, 22, function() {
-            cb(data1)
-
-        }) 
-    }
-
-function valuotokeyConversion():number{
-    return (irCode() & 0XFF);
-}
-
-    basic.forever(() => {
-        if(state == 1){
-            irstate = valuotokeyConversion();
-            if(irstate != -1){
-                data1=irstate
-                control.raiseEvent(11, 22)
-            }
-        }
-        
-        basic.pause(50);
-    })
-    /**
-     * Read the version number.
-     */
-
-    //% weight=10
-    //% blockId=IR_read_version block="get product information"
-    export function IR_read_version(): string {
-        maqueenInit()
-        pins.i2cWriteNumber(0x10, 50, NumberFormat.UInt8BE);
-        let dataLen = pins.i2cReadNumber(0x10, NumberFormat.UInt8BE);
-        pins.i2cWriteNumber(0x10, 51, NumberFormat.UInt8BE);
-        let buf = pins.i2cReadBuffer(0x10, dataLen, false);
-        let version = "";
-        for (let index = 0; index < dataLen; index++) {
-            version += String.fromCharCode(buf[index])
-        }
-        return version
-    }
-
-    function IR_callback(a: Action): void {
-        maqueencb = a
-        IrPressEvent += 1
-        onPressEvent(IrPressEvent, maqueencb)
-    }
-
-    //% advanced=true shim=maqueenIRV2::readPulseIn
-        function readPulseIn(status:number): number {
-            return 0;
-        }
-    /**
-     * Read ultrasonic sensor.
-     */
-    let state1 = 0;
-    //% blockId=ultrasonic_sensor block="read ultrasonic sensor |%unit "
-    //% weight=95
-    export function Ultrasonic(unit: PingUnit, maxCmDistance = 500): number {
-        let data;
-        let i = 0;
-        data = readUlt(unit);
-        if(state1  == 1 && data != 0){
-            state1 =0;
-        }
-        if(data != 0){
-        }else{
-            if(state1 == 0){
-                do{
-                    data = readUlt(unit);
-                    i++;
-                    if(i > 3){
-                        state1 =1;
-                        data =500;
-                        break;
-                        }
-                }while(data == 0)
-            }
-        }
-        if(data == 0)
-            data = 500
-        return data;
-
-    }
-    function readUlt(unit:number):number{
-        let d
-        pins.digitalWritePin(DigitalPin.P1, 1);
-        basic.pause(1)
-        pins.digitalWritePin(DigitalPin.P1, 0);
-        if (pins.digitalReadPin(DigitalPin.P2) == 0) {
-            pins.digitalWritePin(DigitalPin.P1, 0);
-            pins.digitalWritePin(DigitalPin.P1, 1);
-            basic.pause(20)
-            pins.digitalWritePin(DigitalPin.P1, 0);
-            d = pins.pulseIn(DigitalPin.P2, PulseValue.High, 500 * 58);//readPulseIn(1);
-        } else {
-            pins.digitalWritePin(DigitalPin.P1, 1);
-            pins.digitalWritePin(DigitalPin.P1, 0);
-            basic.pause(20)
-            pins.digitalWritePin(DigitalPin.P1, 0);
-            d = pins.pulseIn(DigitalPin.P2, PulseValue.Low, 500 * 58);//readPulseIn(0);
-        }
-        let x = d / 59;
-        switch (unit) {
-            case PingUnit.Centimeters: return Math.round(x);
-            default: return Math.idiv(d, 2.54);
-        }
-    }
 
     /**
      * Set the direction and speed of Maqueen motor.
@@ -365,55 +181,8 @@ function valuotokeyConversion():number{
         }
     }
 
-    /**
-     * Turn on/off the LEDs.
-     */
 
-    //% weight=20
-    //% blockId=writeLED block="LEDlight |%led turn |%ledswitch"
-    //% led.fieldEditor="gridpicker" led.fieldOptions.columns=2 
-    //% ledswitch.fieldEditor="gridpicker" ledswitch.fieldOptions.columns=2
-    export function writeLED(led: LED, ledswitch: LEDswitch): void {
-        if (led == LED.LEDLeft) {
-            pins.digitalWritePin(DigitalPin.P8, ledswitch)
-        } else if (led == LED.LEDRight) {
-            pins.digitalWritePin(DigitalPin.P12, ledswitch)
-        } else {
-            return
-        }
-    }
 
-    /**
-     * Set the Maqueen servos.
-     */
-
-    //% weight=90
-    //% blockId=servo_ServoRun block="servo|%index|angle|%angle"
-    //% angle.min=0 angle.max=180
-    //% index.fieldEditor="gridpicker" index.fieldOptions.columns=2
-    export function servoRun(index: Servos, angle: number): void {
-        let buf = pins.createBuffer(2);
-        if (index == 0) {
-            buf[0] = 0x14;
-        }
-        if (index == 1) {
-            buf[0] = 0x15;
-        }
-        buf[1] = angle;
-        pins.i2cWriteBuffer(0x10, buf);
-    }
-
-     /**
-     * Line tracking sensor event function
-     */
-    //% weight=2
-    //% blockId=kb_event block="on|%value line tracking sensor|%vi"
-    export function ltEvent(value: Patrol1, vi: Voltage, a: Action) {
-         let state = value + vi;
-        serial.writeNumber(state)
-        let item: KV = { key: state, action: a };
-        kbCallback.push(item);
-    }
 
     let x:number
     let i:number = 1;
