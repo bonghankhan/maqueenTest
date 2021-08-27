@@ -9,7 +9,6 @@
     "files": [
         "maqueen.ts",
         "enums.d.ts",
-        "shims.d.ts",
         "README.md"
     ],
     "testFiles": [
